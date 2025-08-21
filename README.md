@@ -17,14 +17,54 @@ A Node.js Express application demonstrating best practices for building scalable
 
 ## Getting Started
 
-### Prerequisites
+### Running with Docker (Recommended)
+
+This is the recommended way to run the application, as it sets up all the required services in a consistent environment.
+
+#### Prerequisites
+
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+#### Running the Application
+
+1.  **Build and start the services:**
+    ```bash
+    docker-compose up --build -d
+    ```
+    This command will build the Docker image for the application and start the `app`, `db`, and `redis` services in detached mode.
+
+2.  **Run database migrations:**
+    ```bash
+    docker-compose run --rm app npx sequelize-cli db:migrate
+    ```
+
+3.  **Run database seeders (optional):**
+    ```bash
+    docker-compose run --rm app npx sequelize-cli db:seed:all
+    ```
+
+The application will be available at `http://localhost:3000`.
+
+#### Stopping the Application
+
+To stop the services, run:
+```bash
+docker-compose down
+```
+
+### Manual Setup
+
+If you prefer to run the application without Docker, you can follow these steps.
+
+#### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or later)
 - [npm](https://www.npmjs.com/)
 - [PostgreSQL](https://www.postgresql.org/)
 - [Redis](https://redis.io/)
 
-### Installation
+#### Installation
 
 1. Clone the repository:
    ```bash
@@ -59,7 +99,7 @@ A Node.js Express application demonstrating best practices for building scalable
     REDIS_PORT=6379
     ```
 
-### Database Setup
+#### Database Setup
 
 1. Make sure your PostgreSQL and Redis servers are running.
 2. Run the migrations to create the database tables:
@@ -71,7 +111,7 @@ A Node.js Express application demonstrating best practices for building scalable
     npm run seed
     ```
 
-### Running the Application
+#### Running the Application
 
 To run the application in development mode (with hot-reloading):
 
