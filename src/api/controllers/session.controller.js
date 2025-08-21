@@ -1,6 +1,6 @@
 const httpStatus = require('http-status');
-const catchAsync = require('../../utils/catchAsync');
-const { sessionService } = require('../../services');
+const catchAsync = require('@/utils/catchAsync');
+const { sessionService } = require('@/services');
 
 const getActiveSessions = catchAsync(async (req, res) => {
   const sessions = await sessionService.getAllActiveSessions();

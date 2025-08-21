@@ -1,10 +1,14 @@
-const app = require('./app');
-const config = require('./config/config');
-const logger = require('./config/logger');
+require('module-alias/register');
+const app = require('@/app');
+const config = require('@/config/config');
+const logger = require('@/config/logger');
+const { initSocket } = require('@/socket');
 
 const server = app.listen(config.port, () => {
   logger.info(`Listening to port ${config.port}`);
 });
+
+initSocket(server);
 
 const exitHandler = () => {
   if (server) {
@@ -31,3 +35,5 @@ process.on('SIGTERM', () => {
     server.close();
   }
 });
+
+module.exports = server;

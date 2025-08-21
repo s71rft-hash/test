@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const config = require('../config/config');
-const redisClient = require('../config/redis');
+const config = require('@/config/config');
+const redisClient = require('@/config/redis');
 
 /**
  * Generate token

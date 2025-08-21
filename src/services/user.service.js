@@ -1,6 +1,7 @@
-const { User } = require('../models');
+const { User } = require('@/models');
+const { Op } = require('sequelize');
 const httpStatus = require('http-status');
-const ApiError = require('../utils/ApiError');
+const ApiError = require('@/utils/ApiError');
 
 /**
  * Create a user
@@ -11,12 +12,13 @@ const createUser = async (userBody) => {
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
-  return User.create(userBody);
+  const user = await User.create(userBody);
+  return user;
 };
 
 /**
  * Query for users
- * @param {Object} filter - Mongo filter
+ * @param {Object} filter - Sequelize filter
  * @param {Object} options - Query options
  * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
  * @param {number} [options.limit] - Maximum number of results per page (default = 10)
@@ -24,8 +26,37 @@ const createUser = async (userBody) => {
  * @returns {Promise<QueryResult>}
  */
 const getUsers = async (filter, options) => {
-  const users = await User.findAll();
-  return users;
+  const { limit, page } = options;
+  const offset = (page - 1) * limit;
+
+  const where = {};
+  if (filter.name) {
+    where.name = { [Op.like]: `%${filter.name}%` };
+  }
+  if (filter.role) {
+    where.role = filter.role;
+  }
+
+  const order = [];
+  if (options.sortBy) {
+    const [field, direction] = options.sortBy.split(':');
+    order.push([field, direction.toUpperCase()]);
+  }
+
+  const { count, rows } = await User.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order,
+  });
+
+  return {
+    totalResults: count,
+    results: rows,
+    totalPages: Math.ceil(count / limit),
+    currentPage: page,
+    limit,
+  };
 };
 
 /**

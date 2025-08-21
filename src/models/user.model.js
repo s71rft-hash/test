@@ -39,7 +39,6 @@ module.exports = (sequelize, DataTypes) => {
       password: {
         type: DataTypes.STRING,
         allowNull: false,
-        private: true, // custom attribute to prevent it from being sent in response
       },
       role: {
         type: DataTypes.STRING,
