@@ -3,13 +3,13 @@ const helmet = require('helmet');
 const xss = require('xss-clean');
 const cors = require('cors');
 const httpStatus = require('http-status');
-const config = require('./config/config');
-const morgan = require('./config/morgan');
-const routes = require('./api/routes/v1');
-const { errorConverter, errorHandler } = require('./api/middlewares/error.middleware');
-const ApiError = require('./utils/ApiError');
+const config = require('@/config/config');
+const morgan = require('@/config/morgan');
+const routes = require('@/api/routes/v1');
+const { errorConverter, errorHandler } = require('@/middlewares/error.middleware');
+const ApiError = require('@/utils/ApiError');
 const passport = require('passport');
-const { jwtStrategy } = require('./config/passport');
+const { jwtStrategy } = require('@/config/passport');
 
 const app = express();
 

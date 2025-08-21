@@ -1,11 +1,11 @@
 const httpStatus = require('http-status');
 const jwt = require('jsonwebtoken');
-const config = require('../config/config');
-const redisClient = require('../config/redis');
-const userService = require('./user.service');
-const tokenService = require('./token.service');
-const { User } = require('../models');
-const ApiError = require('../utils/ApiError');
+const config = require('@/config/config');
+const redisClient = require('@/config/redis');
+const userService = require('@/services/user.service');
+const tokenService = require('@/services/token.service');
+const { User } = require('@/models');
+const ApiError = require('@/utils/ApiError');
 
 /**
  * Login with username and password
