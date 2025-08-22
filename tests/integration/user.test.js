@@ -4,7 +4,10 @@ const http = require('http');
 const { io } = require('socket.io-client');
 const app = require('@/app');
 const { sequelize, User } = require('@/models');
-const { up, down } = require('@/migrations/20250813074501-create-user');
+const { up: upUser, down: downUser } = require('@/migrations/20250813074501-create-user');
+const { up: upRealm, down: downRealm } = require('@/migrations/20250821052444-create-realm');
+const { up: upRole, down: downRole } = require('@/migrations/20250821052449-create-role');
+const { up: upUserRealmRole, down: downUserRealmRole } = require('@/migrations/20250821052453-create-user-realm-role');
 const { up: seedUp, down: seedDown } = require('@/seeders/20250813074544-user-seeder');
 const { tokenService } = require('@/services');
 const { initSocket } = require('@/socket');
@@ -26,17 +29,23 @@ describe('User and Socket routes', () => {
     server = http.createServer(app);
     initSocket(server);
     await new Promise(resolve => server.listen(resolve));
-    await up(sequelize.getQueryInterface(), sequelize.constructor);
+    await upUser(sequelize.getQueryInterface(), sequelize.constructor);
+    await upRealm(sequelize.getQueryInterface(), sequelize.constructor);
+    await upRole(sequelize.getQueryInterface(), sequelize.constructor);
+    await upUserRealmRole(sequelize.getQueryInterface(), sequelize.constructor);
   });
 
   afterAll(async () => {
-    await down(sequelize.getQueryInterface(), sequelize.constructor);
+    await downUserRealmRole(sequelize.getQueryInterface(), sequelize.constructor);
+    await downRole(sequelize.getQueryInterface(), sequelize.constructor);
+    await downRealm(sequelize.getQueryInterface(), sequelize.constructor);
+    await downUser(sequelize.getQueryInterface(), sequelize.constructor);
     await new Promise(resolve => server.close(resolve));
     await sequelize.close();
   });
 
   beforeEach(async () => {
-    await User.destroy({ truncate: true, cascade: true });
+    await seedDown(sequelize.getQueryInterface(), sequelize.constructor);
     await seedUp(sequelize.getQueryInterface(), sequelize.constructor);
     adminUser = await User.findOne({ where: { email: 'admin@example.com' } });
     regularUser = await User.findOne({ where: { email: 'user@example.com' } });
@@ -54,6 +63,7 @@ describe('User and Socket routes', () => {
       expect(res.body.results).toHaveLength(2);
       expect(res.body.currentPage).toBe(1);
       expect(res.body.limit).toBe(10);
+      expect(res.body.results[0].UserRealmRoles).toBeDefined();
     });
   });
 
@@ -65,7 +75,7 @@ describe('User and Socket routes', () => {
         name: 'Test User',
         email: 'test@example.com',
         password: 'password1',
-        role: 'user',
+        roles: [{ realmId: 1, roleId: 2 }],
       };
     });
 
