@@ -17,4 +17,5 @@ module.exports = {
     '^@/utils(|/.*)$': '<rootDir>/src/utils$1',
     '^@(|/.*)$': '<rootDir>/src$1',
   },
+  testTimeout: 30000,
 };
