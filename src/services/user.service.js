@@ -2,6 +2,7 @@ const { User } = require('@/models');
 const { Op } = require('sequelize');
 const httpStatus = require('http-status');
 const ApiError = require('@/utils/ApiError');
+const { rabbitmqService } = require('../config/rabbitmq');
 
 /**
  * Create a user
@@ -13,6 +14,7 @@ const createUser = async (userBody) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
   const user = await User.create(userBody);
+  rabbitmqService.publish('user_events', 'user.created', user);
   return user;
 };
 

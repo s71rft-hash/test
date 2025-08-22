@@ -13,6 +13,10 @@ const envVarsSchema = Joi.object()
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(30).description('minutes after which access tokens expire'),
     REDIS_HOST: Joi.string().required().description('Redis host'),
     REDIS_PORT: Joi.number().default(6379).description('Redis port'),
+    RABBITMQ_HOST: Joi.string().required().description('RabbitMQ host'),
+    RABBITMQ_PORT: Joi.number().default(5672).description('RabbitMQ port'),
+    RABBITMQ_USER: Joi.string().required().description('RabbitMQ user'),
+    RABBITMQ_PASSWORD: Joi.string().required().description('RabbitMQ password'),
   })
   .unknown();
 
@@ -39,5 +43,11 @@ module.exports = {
   redis: {
     host: envVars.REDIS_HOST,
     port: envVars.REDIS_PORT,
+  },
+  rabbitmq: {
+    host: envVars.RABBITMQ_HOST,
+    port: envVars.RABBITMQ_PORT,
+    user: envVars.RABBITMQ_USER,
+    password: envVars.RABBITMQ_PASSWORD,
   },
 };
