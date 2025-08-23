@@ -28,6 +28,7 @@
     "@/validations": "src/api/validators"
   },
   "dependencies": {
+    "amqplib": "^0.10.3",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
@@ -46,7 +47,10 @@
     "sequelize-cli": "^6.6.3",
     "socket.io": "^4.8.1",
     "winston": "^3.8.2",
-    "xss-clean": "^0.1.1"
+    "xss-clean": "^0.1.1",
+    "express-rate-limit": "^7.3.1",
+    "rate-limit-redis": "^4.2.0",
+    "express-recaptcha": "^5.1.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

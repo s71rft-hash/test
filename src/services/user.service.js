@@ -1,7 +1,8 @@
-const { User, UserRealmRole, Realm, Role } = require('@/models');
+const { User } = require('@/models');
 const { Op } = require('sequelize');
 const httpStatus = require('http-status');
 const ApiError = require('@/utils/ApiError');
+const { rabbitmqService } = require('../config/rabbitmq');
 
 /**
  * Create a user
@@ -12,16 +13,8 @@ const createUser = async (userBody) => {
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
-  const { roles, ...userData } = userBody;
-  const user = await User.create(userData);
-  if (roles && roles.length > 0) {
-    const userRealmRoles = roles.map((role) => ({
-      userId: user.id,
-      realmId: role.realmId,
-      roleId: role.roleId,
-    }));
-    await UserRealmRole.bulkCreate(userRealmRoles);
-  }
+  const user = await User.create(userBody);
+  rabbitmqService.publish('user_events', 'user.created', user);
   return user;
 };
 
@@ -42,6 +35,9 @@ const getUsers = async (filter, options) => {
   if (filter.name) {
     where.name = { [Op.like]: `%${filter.name}%` };
   }
+  if (filter.role) {
+    where.role = filter.role;
+  }
 
   const order = [];
   if (options.sortBy) {
@@ -54,15 +50,6 @@ const getUsers = async (filter, options) => {
     limit,
     offset,
     order,
-    include: [
-      {
-        model: UserRealmRole,
-        include: [
-          { model: Realm, attributes: ['id', 'name'] },
-          { model: Role, attributes: ['id', 'name'] },
-        ],
-      },
-    ],
   });
 
   return {
@@ -80,17 +67,7 @@ const getUsers = async (filter, options) => {
  * @returns {Promise<User>}
  */
 const getUserById = async (id) => {
-  return User.findByPk(id, {
-    include: [
-      {
-        model: UserRealmRole,
-        include: [
-          { model: Realm, attributes: ['id', 'name'] },
-          { model: Role, attributes: ['id', 'name'] },
-        ],
-      },
-    ],
-  });
+  return User.findByPk(id);
 };
 
 /**
@@ -116,23 +93,9 @@ const updateUserById = async (userId, updateBody) => {
   if (updateBody.email && (await User.isEmailTaken(updateBody.email, userId))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
-  const { roles, ...userData } = updateBody;
-  Object.assign(user, userData);
+  Object.assign(user, updateBody);
   await user.save();
-
-  if (roles) {
-    await UserRealmRole.destroy({ where: { userId } });
-    if (roles.length > 0) {
-      const userRealmRoles = roles.map((role) => ({
-        userId: user.id,
-        realmId: role.realmId,
-        roleId: role.roleId,
-      }));
-      await UserRealmRole.bulkCreate(userRealmRoles);
-    }
-  }
-
-  return getUserById(userId);
+  return user;
 };
 
 /**

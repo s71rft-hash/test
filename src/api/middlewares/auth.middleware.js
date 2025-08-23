@@ -1,8 +1,8 @@
 const passport = require('passport');
 const httpStatus = require('http-status');
 const ApiError = require('@/utils/ApiError');
+const { roleRights } = require('@/config/roles');
 const { tokenService } = require('@/services');
-const { UserRealmRole, Role } = require('@/models');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
@@ -17,13 +17,8 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
   }
 
   if (requiredRights.length) {
-    const userRealmRoles = await UserRealmRole.findAll({
-      where: { userId: user.id },
-      include: [{ model: Role, attributes: ['name'] }],
-    });
-    const userRights = userRealmRoles.map((userRealmRole) => userRealmRole.Role.name);
+    const userRights = roleRights.get(user.role);
     const hasRequiredRights = requiredRights.every((requiredRight) => userRights.includes(requiredRight));
-
     if (!hasRequiredRights && req.params.userId !== user.id) {
       return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
     }

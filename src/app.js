@@ -33,6 +33,10 @@ app.use(express.urlencoded({ extended: true }));
 // sanitize request data
 app.use(xss());
 
+// limit repeated failed requests
+const limiter = require('./api/middlewares/rateLimiter.middleware');
+app.use('/v1', limiter);
+
 // enable cors
 app.use(cors());
 app.options('*', cors());
