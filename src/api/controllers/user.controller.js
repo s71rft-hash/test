@@ -2,11 +2,13 @@ const httpStatus = require('http-status');
 const pick = require('@/utils/pick');
 const ApiError = require('@/utils/ApiError');
 const catchAsync = require('@/utils/catchAsync');
-const { userService, socketService } = require('@/services');
+const { userService } = require('@/services');
+
+const { emitToAll } = require('@/services/socket.service');
 
 const createUser = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
-  socketService.emitEvent('user:created', user);
+  emitToAll('user:created', user);
   res.status(httpStatus.CREATED).send(user);
 });
 

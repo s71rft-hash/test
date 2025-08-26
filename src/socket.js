@@ -2,17 +2,21 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('@/config/config');
 const userService = require('./services/user.service');
+const SocketManager = require('./services/SocketManager');
+const { setIO, setSocketManager } = require('./socket-instance');
 const ApiError = require('@/utils/ApiError');
 const httpStatus = require('http-status');
 
-let io;
-
 const initSocket = (server) => {
-  io = new Server(server, {
+  const io = new Server(server, {
     cors: {
-      origin: '*', // For development. In production, this should be restricted.
+      origin: config.env === 'development' ? '*' : 'https://yourapp.com', // TODO: Update with your production domain
     },
   });
+
+  setIO(io);
+  const socketManager = new SocketManager();
+  setSocketManager(socketManager);
 
   // Authentication middleware
   io.use(async (socket, next) => {
@@ -37,24 +41,16 @@ const initSocket = (server) => {
   });
 
   io.on('connection', (socket) => {
-    // console.log('A user connected:', socket.user.name);
+    socketManager.addUser(socket);
 
     socket.on('disconnect', () => {
-      // console.log('User disconnected:', socket.user.name);
+      socketManager.removeUser(socket);
     });
   });
 
   return io;
 };
 
-const getIO = () => {
-  if (!io) {
-    throw new Error('Socket.IO not initialized!');
-  }
-  return io;
-};
-
 module.exports = {
   initSocket,
-  getIO,
 };

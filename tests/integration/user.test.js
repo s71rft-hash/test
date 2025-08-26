@@ -10,12 +10,6 @@ const { tokenService } = require('@/services');
 const { initSocket } = require('@/socket');
 const redisClient = require('@/config/redis');
 
-jest.mock('@/config/redis', () => ({
-  get: jest.fn().mockResolvedValue('true'),
-  set: jest.fn().mockResolvedValue('OK'),
-  del: jest.fn().mockResolvedValue('OK'),
-}));
-
 describe('User and Socket routes', () => {
   let server;
   let adminUser;
