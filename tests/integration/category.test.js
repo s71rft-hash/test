@@ -4,10 +4,13 @@ const http = require('http');
 const app = require('@/app');
 const { sequelize, User, Product, Category } = require('@/models');
 const { up: upUser } = require('@/migrations/20250813074501-create-user');
-const { up: upCategory } = require('@/migrations/20250826104621-create-category');
 const { up: upProduct } = require('@/migrations/20250826000000-create-product');
+const { up: upCategory } = require('@/migrations/20250826104621-create-category');
 const { up: upProductCategory } = require('@/migrations/20250826104819-add-categoryId-to-product');
-const { up: seedUp, down: seedDown } = require('@/seeders/20250813074544-user-seeder');
+const { down: downUser } = require('@/migrations/20250813074501-create-user');
+const { down: downProduct } = require('@/migrations/20250826000000-create-product');
+const { down: downCategory } = require('@/migrations/20250826104621-create-category');
+const { up: seedUp } = require('@/seeders/20250813074544-user-seeder');
 const { tokenService } = require('@/services');
 
 jest.mock('@/config/redis', () => ({
@@ -16,7 +19,7 @@ jest.mock('@/config/redis', () => ({
   del: jest.fn().mockResolvedValue('OK'),
 }));
 
-describe('Product routes', () => {
+describe('Category routes', () => {
   let server;
   let adminToken;
 
@@ -30,6 +33,7 @@ describe('Product routes', () => {
   });
 
   afterAll(async () => {
+    // down migrations are tricky with foreign keys, so we'll just close the connection
     await new Promise(resolve => server.close(resolve));
     await sequelize.close();
   });
@@ -44,65 +48,50 @@ describe('Product routes', () => {
     adminToken = tokenResponse.access.token;
   });
 
-  describe('POST /v1/products', () => {
-    let newProduct;
+  describe('GET /v1/categories', () => {
+    it('should return a nested list of categories with product counts', async () => {
+      const electronics = await Category.create({ name: 'Electronics', slug: 'electronics' });
+      const laptops = await Category.create({ name: 'Laptops', slug: 'laptops', parentId: electronics.id });
+      const smartphones = await Category.create({ name: 'Smartphones', slug: 'smartphones', parentId: electronics.id });
+      await Category.create({ name: 'Clothing', slug: 'clothing' });
 
-    beforeEach(() => {
-      newProduct = {
-        name: 'Test Product',
-        price: 9.99,
-        properties: {
-          color: 'red',
-          size: 'M',
-        },
-      };
-    });
+      await Product.create({ name: 'Laptop X', price: 1000, categoryId: laptops.id });
+      await Product.create({ name: 'Laptop Y', price: 1500, categoryId: laptops.id });
+      await Product.create({ name: 'Phone Z', price: 800, categoryId: smartphones.id });
 
-    it('should create a new product', async () => {
       const res = await request(server)
-        .post('/v1/products')
+        .get('/v1/categories')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(newProduct)
-        .expect(httpStatus.CREATED);
+        .expect(httpStatus.OK);
 
-      expect(res.body.name).toBe(newProduct.name);
-      expect(res.body.price).toBe(newProduct.price);
-      expect(res.body.properties.color).toBe('red');
+      expect(res.body).toHaveLength(2);
+      const electronicsCat = res.body.find(c => c.name === 'Electronics');
+      const clothingCat = res.body.find(c => c.name === 'Clothing');
+
+      expect(electronicsCat.productCount).toBe(3);
+      expect(electronicsCat.children).toHaveLength(2);
+      const laptopsCat = electronicsCat.children.find(c => c.name === 'Laptops');
+      const smartphonesCat = electronicsCat.children.find(c => c.name === 'Smartphones');
+      expect(laptopsCat.productCount).toBe(2);
+      expect(smartphonesCat.productCount).toBe(1);
+      expect(clothingCat.productCount).toBe(0);
     });
   });
 
-  describe('GET /v1/products', () => {
-    it('should filter products by category, including children', async () => {
+  describe('GET /v1/categories/:categoryId', () => {
+    it('should return a single category with its total product count', async () => {
       const electronics = await Category.create({ name: 'Electronics', slug: 'electronics' });
       const laptops = await Category.create({ name: 'Laptops', slug: 'laptops', parentId: electronics.id });
-      const phones = await Category.create({ name: 'Smartphones', slug: 'smartphones', parentId: electronics.id });
-      const clothing = await Category.create({ name: 'Clothing', slug: 'clothing' });
-
       await Product.create({ name: 'Laptop X', price: 1000, categoryId: laptops.id });
-      await Product.create({ name: 'Phone Y', price: 800, categoryId: phones.id });
-      await Product.create({ name: 'T-Shirt', price: 20, categoryId: clothing.id });
+      await Product.create({ name: 'Laptop Y', price: 1500, categoryId: laptops.id });
 
       const res = await request(server)
-        .get('/v1/products')
-        .query({ categoryId: electronics.id })
+        .get(`/v1/categories/${electronics.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(httpStatus.OK);
 
-      expect(res.body.results).toHaveLength(2);
-      expect(res.body.results.some(p => p.name === 'Laptop X')).toBe(true);
-      expect(res.body.results.some(p => p.name === 'Phone Y')).toBe(true);
-    });
-
-    it('should return an empty list if category has no products', async () => {
-      const emptyCategory = await Category.create({ name: 'Empty', slug: 'empty' });
-
-      const res = await request(server)
-        .get('/v1/products')
-        .query({ categoryId: emptyCategory.id })
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(httpStatus.OK);
-
-      expect(res.body.results).toHaveLength(0);
+      expect(res.body.name).toBe('Electronics');
+      expect(res.body.productCount).toBe(2);
     });
   });
 });
