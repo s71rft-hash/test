@@ -1,4 +1,5 @@
 const { Product } = require('@/models');
+const { Op } = require('sequelize');
 const httpStatus = require('http-status');
 const ApiError = require('@/utils/ApiError');
 
@@ -28,6 +29,10 @@ const getProducts = async (filter, options) => {
   const where = {};
   if (filter.name) {
     where.name = { [Op.like]: `%${filter.name}%` };
+  }
+
+  if (filter.categoryIds) {
+    where.categoryId = { [Op.in]: filter.categoryIds };
   }
 
   const order = [];
