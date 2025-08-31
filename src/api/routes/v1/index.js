@@ -3,6 +3,7 @@ const authRoute = require('./auth.route');
 const userRoute = require('./user.route');
 const sessionRoute = require('./session.route');
 const productRoute = require('./product.route');
+const viewRoute = require('./view.route');
 const categoryRoute = require('./category.route');
 const pdfRoute = require('./pdf.route');
 
@@ -32,6 +33,10 @@ const defaultRoutes = [
   {
     path: '/pdf',
     route: pdfRoute,
+  },
+  {
+    path: '/',
+    route: viewRoute,
   },
 ];
 

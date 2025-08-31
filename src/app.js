@@ -10,8 +10,13 @@ const { errorConverter, errorHandler } = require('@/middlewares/error.middleware
 const ApiError = require('@/utils/ApiError');
 const passport = require('passport');
 const { jwtStrategy } = require('@/config/passport');
+const path = require('path');
 
 const app = express();
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
 
 // jwt strategy
 passport.use(jwtStrategy);
@@ -29,6 +34,9 @@ app.use(express.json());
 
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
+
+// serve static files
+app.use(express.static(path.join(__dirname, '../public')));
 
 // sanitize request data
 app.use(xss());
