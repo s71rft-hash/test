@@ -48,13 +48,6 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: 'User',
-      hooks: {
-        async beforeSave(user) {
-          if (user.changed('password')) {
-            user.password = await bcrypt.hash(user.password, 8);
-          }
-        },
-      },
       defaultScope: {
         attributes: {
           exclude: ['password'],

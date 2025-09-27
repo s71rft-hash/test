@@ -32,6 +32,14 @@ fs
   .forEach(file => {
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
+
+    const hooksFile = path.join(__dirname, '..', 'hooks', `${model.name}.js`);
+    if (fs.existsSync(hooksFile)) {
+      const hooks = require(hooksFile);
+      Object.entries(hooks).forEach(([hookName, fn]) => {
+        db[model.name].addHook(hookName, fn);
+      });
+    }
   });
 
 Object.keys(db).forEach(modelName => {
